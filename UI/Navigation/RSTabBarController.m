@@ -1,5 +1,9 @@
 #import "RSTabBarController.h"
 #import "RSTheme.h"
+#import "RSHomeViewController.h"
+#import "RSRepositoriesViewController.h"
+#import "RSSearchViewController.h"
+#import "RSProfileViewController.h"
 
 @interface RSTabBarController () <RSTabBarDelegate>
 @property (nonatomic, strong) UIView *containerView;
@@ -14,22 +18,12 @@
     [super viewDidLoad];
     self.view.backgroundColor = [[RSTheme shared] backgroundColor];
 
-    // Placeholder VCs (will be replaced in Phase 3)
+    // Placeholder VCs replaced by real ones
+    NSArray *classes = @[[RSHomeViewController class], [RSRepositoriesViewController class],
+                         [RSSearchViewController class], [RSProfileViewController class]];
     NSMutableArray *vcs = [NSMutableArray array];
     for (NSInteger i = 0; i < 4; i++) {
-        UIViewController *vc = [[UIViewController alloc] init];
-        vc.view.backgroundColor = [[RSTheme shared] backgroundColor];
-        UILabel *l = [[UILabel alloc] init];
-        l.text = @[@"Главная", @"Репозитории", @"Поиск", @"Профиль"][i];
-        l.font = [[RSTheme shared] titleFont];
-        l.textColor = [[RSTheme shared] textColor];
-        l.textAlignment = NSTextAlignmentCenter;
-        [vc.view addSubview:l];
-        l.translatesAutoresizingMaskIntoConstraints = NO;
-        [NSLayoutConstraint activateConstraints:@[
-            [NSLayoutConstraint constraintWithItem:l attribute:NSLayoutAttributeCenterX relatedBy:0 toItem:vc.view attribute:NSLayoutAttributeCenterX multiplier:1 constant:0],
-            [NSLayoutConstraint constraintWithItem:l attribute:NSLayoutAttributeCenterY relatedBy:0 toItem:vc.view attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]
-        ]];
+        UIViewController *vc = [[classes[i] alloc] init];
         [vcs addObject:vc];
     }
     self.viewControllers = vcs;
