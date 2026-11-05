@@ -4,8 +4,11 @@
 
 @interface RSTabBar ()
 @property (nonatomic, strong) NSArray *buttons;
-@property (nonatomic, strong) RSGlassView *glassContainer;
-@property (nonatomic, strong) UIView *selectionIndicator;
+@property (nonatomic, strong) UIView *pill;
+@property (nonatomic, assign) CGFloat tabWidth;
+@property (nonatomic, assign) CGFloat barHeight;
+@property (nonatomic, assign) CGFloat pillHeight;
+@property (nonatomic, strong) UIImpactFeedbackGenerator *feedback;
 @end
 
 @implementation RSTabBar
@@ -18,94 +21,97 @@
 
 - (void)setup {
     self.backgroundColor = [UIColor clearColor];
+    _barHeight = 52.0;
+    _pillHeight = 36.0;
 
-    // Glass контейнер - плавающая капсула
-    _glassContainer = [[RSGlassView alloc] init];
-    _glassContainer.translatesAutoresizingMaskIntoConstraints = NO;
-    _glassContainer.cornerRadius = 28;
-    _glassContainer.enableShadow = YES;
-    _glassContainer.clipsToBounds = NO;
-    [self addSubview:_glassContainer];
+    _feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
 
+    // Кнопки
     NSArray *titles = @[@"Главная", @"Репозитории", @"Поиск", @"Профиль"];
     NSMutableArray *btns = [NSMutableArray array];
-
     for (NSInteger i = 0; i < 4; i++) {
         UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
         btn.tag = i;
         [btn setTitle:titles[i] forState:UIControlStateNormal];
-        btn.titleLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
-        btn.titleLabel.numberOfLines = 1;
-        btn.titleLabel.adjustsFontSizeToFitWidth = YES;
-        btn.titleLabel.minimumScaleFactor = 0.7;
+        btn.titleLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightMedium];
         [btn setTitleColor:[[RSTheme shared] secondaryTextColor] forState:UIControlStateNormal];
-        [btn setTitleColor:[[RSTheme shared] accentColor] forState:UIControlStateSelected];
+        [btn setTitleColor:[[RSTheme shared] textColor] forState:UIControlStateSelected];
         btn.tintColor = [[RSTheme shared] secondaryTextColor];
         [btn setImage:[self iconForIndex:i selected:NO] forState:UIControlStateNormal];
         [btn setImage:[self iconForIndex:i selected:YES] forState:UIControlStateSelected];
         btn.imageView.contentMode = UIViewContentModeScaleAspectFit;
-        btn.titleEdgeInsets = UIEdgeInsetsMake(2, -24, -16, 0);
-        btn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 14, 0);
+        btn.titleEdgeInsets = UIEdgeInsetsMake(2, -22, -14, 0);
+        btn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 12, 0);
         [btn addTarget:self action:@selector(btnTapped:) forControlEvents:UIControlEventTouchUpInside];
-        [_glassContainer addSubview:btn];
+        [self addSubview:btn];
         [btns addObject:btn];
     }
     self.buttons = btns;
 
-    // Индикатор выбора (точка)
-    _selectionIndicator = [[UIView alloc] init];
-    _selectionIndicator.backgroundColor = [[RSTheme shared] accentColor];
-    _selectionIndicator.layer.cornerRadius = 4;
-    [_glassContainer addSubview:_selectionIndicator];
+    // Pill (капля) - как у Apple
+    _pill = [[UIView alloc] init];
+    _pill.backgroundColor = [[RSTheme shared] accentColor];
+    _pill.layer.cornerRadius = _pillHeight / 2.0;
+    _pill.layer.shadowColor = [UIColor blackColor].CGColor;
+    _pill.layer.shadowOffset = CGSizeMake(0, 2);
+    _pill.layer.shadowRadius = 4;
+    _pill.layer.shadowOpacity = 0.2;
+    [self insertSubview:_pill belowSubview:self.buttons[0]];
 
+    // Pan gesture для перетаскивания pill
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(pillDrag:)];
+    [_pill addGestureRecognizer:pan];
+    _pill.userInteractionEnabled = YES;
+
+    _selectedIndex = 0;
     [self updateAppearance];
 }
 
 - (UIImage *)iconForIndex:(NSInteger)idx selected:(BOOL)sel {
-    CGSize s = CGSizeMake(24, 24);
+    CGSize s = CGSizeMake(22, 22);
     UIGraphicsBeginImageContextWithOptions(s, NO, 0);
     CGContextRef ctx = UIGraphicsGetCurrentContext();
     UIColor *c = sel ? [[RSTheme shared] accentColor] : [[RSTheme shared] secondaryTextColor];
     CGContextSetStrokeColorWithColor(ctx, c.CGColor);
-    CGContextSetLineWidth(ctx, 1.8);
+    CGContextSetLineWidth(ctx, 1.6);
     CGContextSetLineCap(ctx, kCGLineCapRound);
     CGContextSetLineJoin(ctx, kCGLineJoinRound);
 
     switch (idx) {
-        case 0: { // house
-            CGContextMoveToPoint(ctx, 5, 11);
-            CGContextAddLineToPoint(ctx, 12, 5);
-            CGContextAddLineToPoint(ctx, 19, 11);
-            CGContextAddLineToPoint(ctx, 19, 19);
-            CGContextAddLineToPoint(ctx, 5, 19);
+        case 0: {
+            CGContextMoveToPoint(ctx, 5, 10);
+            CGContextAddLineToPoint(ctx, 11, 5);
+            CGContextAddLineToPoint(ctx, 17, 10);
+            CGContextAddLineToPoint(ctx, 17, 17);
+            CGContextAddLineToPoint(ctx, 5, 17);
             CGContextClosePath(ctx);
             CGContextStrokePath(ctx);
             break;
         }
-        case 1: { // folder
-            CGContextMoveToPoint(ctx, 4, 8);
-            CGContextAddLineToPoint(ctx, 10, 8);
-            CGContextAddLineToPoint(ctx, 12, 6);
-            CGContextAddLineToPoint(ctx, 20, 6);
-            CGContextAddLineToPoint(ctx, 20, 18);
-            CGContextAddLineToPoint(ctx, 4, 18);
+        case 1: {
+            CGContextMoveToPoint(ctx, 4, 7);
+            CGContextAddLineToPoint(ctx, 9, 7);
+            CGContextAddLineToPoint(ctx, 11, 5);
+            CGContextAddLineToPoint(ctx, 18, 5);
+            CGContextAddLineToPoint(ctx, 18, 17);
+            CGContextAddLineToPoint(ctx, 4, 17);
             CGContextClosePath(ctx);
             CGContextStrokePath(ctx);
             break;
         }
-        case 2: { // search
-            CGContextAddArc(ctx, 9, 9, 5, 0, 6.28, 0);
+        case 2: {
+            CGContextAddArc(ctx, 8, 8, 4, 0, 6.28, 0);
             CGContextStrokePath(ctx);
-            CGContextMoveToPoint(ctx, 14, 14);
-            CGContextAddLineToPoint(ctx, 19, 19);
+            CGContextMoveToPoint(ctx, 12, 12);
+            CGContextAddLineToPoint(ctx, 17, 17);
             CGContextStrokePath(ctx);
             break;
         }
-        case 3: { // person
-            CGContextAddArc(ctx, 12, 8, 3, 0, 6.28, 0);
+        case 3: {
+            CGContextAddArc(ctx, 11, 7, 3, 0, 6.28, 0);
             CGContextStrokePath(ctx);
-            CGContextMoveToPoint(ctx, 6, 19);
-            CGContextAddCurveToPoint(ctx, 6, 15, 18, 15, 18, 19);
+            CGContextMoveToPoint(ctx, 5, 17);
+            CGContextAddCurveToPoint(ctx, 5, 13, 17, 13, 17, 17);
             CGContextStrokePath(ctx);
             break;
         }
@@ -117,29 +123,77 @@
 
 - (void)btnTapped:(UIButton *)sender {
     self.selectedIndex = (RSTabIndex)sender.tag;
+    [_feedback impactOccurred];
     if ([self.delegate respondsToSelector:@selector(tabBar:didSelectIndex:)]) {
         [self.delegate tabBar:self didSelectIndex:self.selectedIndex];
     }
 }
 
-- (void)setSelectedIndex:(RSTabIndex)selectedIndex {
-    _selectedIndex = selectedIndex;
-    [self updateAppearance];
+- (void)pillDrag:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self];
+    CGFloat newX = _pill.center.x + translation.x;
+    CGFloat minX = _pill.bounds.size.width / 2.0 + 4;
+    CGFloat maxX = self.bounds.size.width - _pill.bounds.size.width / 2.0 - 4;
+    newX = MIN(MAX(newX, minX), maxX);
+    _pill.center = CGPointMake(newX, _pill.center.y);
+    [gesture setTranslation:CGPointZero inView:self];
+
+    if (gesture.state == UIGestureRecognizerStateEnded || gesture.state == UIGestureRecognizerStateCancelled) {
+        // Snap to nearest tab
+        NSInteger nearest = [self nearestTabToX:_pill.center.x];
+        if (nearest != _selectedIndex) {
+            _selectedIndex = nearest;
+            [_feedback impactOccurred];
+            if ([self.delegate respondsToSelector:@selector(tabBar:didSelectIndex:)]) {
+                [self.delegate tabBar:self didSelectIndex:_selectedIndex];
+            }
+        }
+        [self animatePillToSelected];
+    }
 }
 
-- (void)updateAppearance {
+- (NSInteger)nearestTabToX:(CGFloat)x {
+    NSInteger nearest = 0;
+    CGFloat minDist = CGFLOAT_MAX;
+    for (NSInteger i = 0; i < self.buttons.count; i++) {
+        UIButton *btn = self.buttons[i];
+        CGFloat btnCenter = btn.center.x;
+        CGFloat dist = fabs(x - btnCenter);
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = i;
+        }
+    }
+    return nearest;
+}
+
+- (void)setSelectedIndex:(RSTabIndex)selectedIndex {
+    if (_selectedIndex == selectedIndex) return;
+    _selectedIndex = selectedIndex;
+    [self animatePillToSelected];
+    [self updateButtons];
+}
+
+- (void)animatePillToSelected {
+    UIButton *btn = self.buttons[_selectedIndex];
+    CGFloat targetX = btn.center.x;
+
+    [UIView animateWithDuration:0.35 delay:0 usingSpringWithDamping:0.8 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        self.pill.center = CGPointMake(targetX, self.pill.center.y);
+    } completion:nil];
+}
+
+- (void)updateButtons {
     RSTheme *t = [RSTheme shared];
     for (NSInteger i = 0; i < self.buttons.count; i++) {
         UIButton *btn = self.buttons[i];
-        BOOL sel = (i == _selectedIndex);
-        btn.selected = sel;
-        btn.tintColor = sel ? [t accentColor] : [t secondaryTextColor];
+        btn.selected = (i == _selectedIndex);
+        btn.tintColor = (i == _selectedIndex) ? [t accentColor] : [t secondaryTextColor];
     }
+}
 
-    // Анимация индикатора
-    [UIView animateWithDuration:0.25 delay:0 usingSpringWithDamping:0.8 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-        [self layoutIfNeeded];
-    } completion:nil];
+- (void)updateAppearance {
+    [self updateButtons];
 }
 
 - (void)layoutSubviews {
@@ -147,24 +201,20 @@
 
     CGFloat w = self.bounds.size.width;
     CGFloat h = self.bounds.size.height;
-    CGFloat glassH = h - 4; // отступы сверху/снизу
+    CGFloat barInset = 16.0; // Отступы по бокам
+    CGFloat availableW = w - barInset * 2;
+    _tabWidth = availableW / 4.0;
 
-    // Контейнер - плавающая капсула
-    _glassContainer.frame = CGRectMake(8, 2, w - 16, glassH);
-    _glassContainer.layer.cornerRadius = glassH / 2;
-
-    CGFloat btnW = (w - 16) / 4.0;
+    // Кнопки
     for (NSInteger i = 0; i < self.buttons.count; i++) {
         UIButton *btn = self.buttons[i];
-        btn.frame = CGRectMake(i * btnW, 0, btnW, glassH);
+        btn.frame = CGRectMake(barInset + i * _tabWidth, 0, _tabWidth, h);
     }
 
-    // Индикатор - точка под выбранной кнопкой
-    if (self.buttons.count > 0 && _selectedIndex < (NSInteger)self.buttons.count) {
-        CGFloat indicatorW = 6;
-        CGFloat indicatorX = _selectedIndex * btnW + (btnW - indicatorW) / 2;
-        _selectionIndicator.frame = CGRectMake(indicatorX + 8, glassH - 10, indicatorW, indicatorW);
-    }
+    // Pill
+    _pill.bounds = CGRectMake(0, 0, _tabWidth - 8, _pillHeight);
+    UIButton *selBtn = self.buttons[_selectedIndex];
+    _pill.center = CGPointMake(selBtn.center.x, h / 2.0);
 }
 
 @end
