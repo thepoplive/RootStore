@@ -1,6 +1,5 @@
 #import "RSTabBar.h"
 #import "RSTheme.h"
-#import "RSGlassView.h"
 
 @interface RSTabBar ()
 @property (nonatomic, strong) NSArray *buttons;
@@ -21,8 +20,8 @@
 
 - (void)setup {
     self.backgroundColor = [UIColor clearColor];
-    _barHeight = 52.0;
-    _pillHeight = 36.0;
+    _barHeight = 58.0;
+    _pillHeight = 44.0;
 
     _feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
 
@@ -35,27 +34,27 @@
         [btn setTitle:titles[i] forState:UIControlStateNormal];
         btn.titleLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightMedium];
         [btn setTitleColor:[[RSTheme shared] secondaryTextColor] forState:UIControlStateNormal];
-        [btn setTitleColor:[[RSTheme shared] textColor] forState:UIControlStateSelected];
+        [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
         btn.tintColor = [[RSTheme shared] secondaryTextColor];
         [btn setImage:[self iconForIndex:i selected:NO] forState:UIControlStateNormal];
         [btn setImage:[self iconForIndex:i selected:YES] forState:UIControlStateSelected];
         btn.imageView.contentMode = UIViewContentModeScaleAspectFit;
-        btn.titleEdgeInsets = UIEdgeInsetsMake(2, -22, -14, 0);
-        btn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 12, 0);
+        btn.titleEdgeInsets = UIEdgeInsetsMake(24, -24, 0, 0);
+        btn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0);
         [btn addTarget:self action:@selector(btnTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:btn];
         [btns addObject:btn];
     }
     self.buttons = btns;
 
-    // Pill (капля) - как у Apple
+    // Pill (капля)
     _pill = [[UIView alloc] init];
     _pill.backgroundColor = [[RSTheme shared] accentColor];
     _pill.layer.cornerRadius = _pillHeight / 2.0;
     _pill.layer.shadowColor = [UIColor blackColor].CGColor;
     _pill.layer.shadowOffset = CGSizeMake(0, 2);
-    _pill.layer.shadowRadius = 4;
-    _pill.layer.shadowOpacity = 0.2;
+    _pill.layer.shadowRadius = 6;
+    _pill.layer.shadowOpacity = 0.25;
     [self insertSubview:_pill belowSubview:self.buttons[0]];
 
     // Pan gesture для перетаскивания pill
@@ -71,7 +70,7 @@
     CGSize s = CGSizeMake(22, 22);
     UIGraphicsBeginImageContextWithOptions(s, NO, 0);
     CGContextRef ctx = UIGraphicsGetCurrentContext();
-    UIColor *c = sel ? [[RSTheme shared] accentColor] : [[RSTheme shared] secondaryTextColor];
+    UIColor *c = sel ? [UIColor whiteColor] : [[RSTheme shared] secondaryTextColor];
     CGContextSetStrokeColorWithColor(ctx, c.CGColor);
     CGContextSetLineWidth(ctx, 1.6);
     CGContextSetLineCap(ctx, kCGLineCapRound);
@@ -139,7 +138,6 @@
     [gesture setTranslation:CGPointZero inView:self];
 
     if (gesture.state == UIGestureRecognizerStateEnded || gesture.state == UIGestureRecognizerStateCancelled) {
-        // Snap to nearest tab
         NSInteger nearest = [self nearestTabToX:_pill.center.x];
         if (nearest != _selectedIndex) {
             _selectedIndex = nearest;
@@ -184,11 +182,10 @@
 }
 
 - (void)updateButtons {
-    RSTheme *t = [RSTheme shared];
     for (NSInteger i = 0; i < self.buttons.count; i++) {
         UIButton *btn = self.buttons[i];
         btn.selected = (i == _selectedIndex);
-        btn.tintColor = (i == _selectedIndex) ? [t accentColor] : [t secondaryTextColor];
+        [btn setImage:[self iconForIndex:i selected:(i == _selectedIndex)] forState:UIControlStateNormal];
     }
 }
 
@@ -201,18 +198,18 @@
 
     CGFloat w = self.bounds.size.width;
     CGFloat h = self.bounds.size.height;
-    CGFloat barInset = 16.0; // Отступы по бокам
+    CGFloat barInset = 24.0;
     CGFloat availableW = w - barInset * 2;
     _tabWidth = availableW / 4.0;
 
-    // Кнопки
+    // Кнопки по центру
     for (NSInteger i = 0; i < self.buttons.count; i++) {
         UIButton *btn = self.buttons[i];
         btn.frame = CGRectMake(barInset + i * _tabWidth, 0, _tabWidth, h);
     }
 
     // Pill
-    _pill.bounds = CGRectMake(0, 0, _tabWidth - 8, _pillHeight);
+    _pill.bounds = CGRectMake(0, 0, _tabWidth - 4, _pillHeight);
     UIButton *selBtn = self.buttons[_selectedIndex];
     _pill.center = CGPointMake(selBtn.center.x, h / 2.0);
 }
