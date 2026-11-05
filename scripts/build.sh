@@ -43,8 +43,9 @@ include_flags() {
 
 compile_all() {
     local compile_sysroot src obj incs newest
-    compile_sysroot="$(xcrun --sdk iphoneos --show-sdk-path)"
-    [ -d "$compile_sysroot" ] || die "iphoneos SDK not found"
+    # Compile with legacy SDK too (avoids availability version mismatches)
+    compile_sysroot="$LEGACY_SDK"
+    [ -d "$compile_sysroot" ] || die "legacy SDK missing at $LEGACY_SDK (CI clones theos/sdks sparse)"
     incs="$(include_flags)"
     mkdir -p "$OBJ"
     while IFS= read -r src; do
@@ -69,7 +70,7 @@ link_binary() {
     echo "  LD $APP_NAME (sysroot: $(basename "$LEGACY_SDK"))"
     # shellcheck disable=SC2086
     xcrun clang -arch "$ARCH" -miphoneos-version-min="$MIN_OS" \
-        -isysroot "$LEGACY_SDK" -Wl,-U,_objc_msgSend_stret -Wl,-U,__availability_version_check \
+        -isysroot "$LEGACY_SDK" -Wl,-U,_objc_msgSend_stret \
         -o "$BUILD/$APP_NAME" "$OBJ"/*.o $FRAMEWORKS $LIBS \
         || die "link failed"
     command -v ldid >/dev/null 2>&1 || die "ldid not found (brew install ldid)"
