@@ -12,152 +12,105 @@
     self.navigationController.navigationBarHidden = YES;
 
     UIScrollView *scroll = [[UIScrollView alloc] init];
-    scroll.translatesAutoresizingMaskIntoConstraints = NO;
+    scroll.frame = self.view.bounds;
+    scroll.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    scroll.showsVerticalScrollIndicator = YES;
     [self.view addSubview:scroll];
 
-    UIStackView *stack = [[UIStackView alloc] init];
-    stack.axis = UILayoutConstraintAxisVertical;
-    stack.spacing = 24;
-    stack.translatesAutoresizingMaskIntoConstraints = NO;
-    [scroll addSubview:stack];
+    CGFloat y = 16;
+    CGFloat w = scroll.frame.size.width - 32;
 
-    // Sections
-    [stack addArrangedSubview:[self sectionHeader:@"Недавно добавленные репозитории"]];
-    [stack addArrangedSubview:[self repoCards]];
+    // Недавно добавленные репозитории
+    y = [self addSectionTitle:@"Недавно добавленные репозитории" y:y toScroll:scroll];
+    y = [self addRepoCards:y toScroll:scroll width:w];
 
-    [stack addArrangedSubview:[self sectionHeader:@"Твики" withButton:@"Открыть весь список"]];
-    [stack addArrangedSubview:[self itemCards:@"tweak"]];
+    // Твики
+    y = [self addSectionTitle:@"Твики" withButton:@"Открыть весь список" y:y toScroll:scroll];
+    y = [self addItemCards:y section:@"tweak" toScroll:scroll width:w];
 
-    [stack addArrangedSubview:[self sectionHeader:@"Приложения" withButton:@"Открыть весь список"]];
-    [stack addArrangedSubview:[self itemCards:@"app"]];
+    // Приложения
+    y = [self addSectionTitle:@"Приложения" withButton:@"Открыть весь список" y:y toScroll:scroll];
+    y = [self addItemCards:y section:@"app" toScroll:scroll width:w];
 
-    [stack addArrangedSubview:[self sectionHeader:@"Игры" withButton:@"Открыть весь список"]];
-    [stack addArrangedSubview:[self itemCards:@"game"]];
+    // Игры
+    y = [self addSectionTitle:@"Игры" withButton:@"Открыть весь список" y:y toScroll:scroll];
+    y = [self addItemCards:y section:@"game" toScroll:scroll width:w];
 
-    [stack addArrangedSubview:[self sectionHeader:@"Темы" withButton:@"Открыть весь список"]];
-    [stack addArrangedSubview:[self itemCards:@"theme"]];
+    // Темы
+    y = [self addSectionTitle:@"Темы" withButton:@"Открыть весь список" y:y toScroll:scroll];
+    y = [self addItemCards:y section:@"theme" toScroll:scroll width:w];
 
-    [NSLayoutConstraint activateConstraints:@[
-        [scroll.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
-        [scroll.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [scroll.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [scroll.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-        [stack.topAnchor constraintEqualToAnchor:scroll.topAnchor constant:16],
-        [stack.leadingAnchor constraintEqualToAnchor:scroll.leadingAnchor constant:16],
-        [stack.trailingAnchor constraintEqualToAnchor:scroll.trailingAnchor constant:-16],
-        [stack.bottomAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:-16]
-    ]];
+    scroll.contentSize = CGSizeMake(scroll.frame.size.width, y + 16);
 }
 
-- (UIView *)sectionHeader:(NSString *)title {
-    return [self sectionHeader:title withButton:nil];
+- (CGFloat)addSectionTitle:(NSString *)title y:(CGFloat)y toScroll:(UIScrollView *)scroll {
+    return [self addSectionTitle:title withButton:nil y:y toScroll:scroll];
 }
 
-- (UIView *)sectionHeader:(NSString *)title withButton:(NSString *)btnTitle {
-    UIView *row = [[UIView alloc] init];
-    row.translatesAutoresizingMaskIntoConstraints = NO;
-
-    UILabel *l = [[UILabel alloc] init];
+- (CGFloat)addSectionTitle:(NSString *)title withButton:(NSString *)btnTitle y:(CGFloat)y toScroll:(UIScrollView *)scroll {
+    UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(16, y, scroll.frame.size.width - 32, 30)];
     l.text = title;
     l.font = [[RSTheme shared] titleFont];
     l.textColor = [[RSTheme shared] textColor];
-    l.translatesAutoresizingMaskIntoConstraints = NO;
-    [row addSubview:l];
+    [scroll addSubview:l];
 
     if (btnTitle) {
         UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
         [b setTitle:btnTitle forState:UIControlStateNormal];
         b.titleLabel.font = [[RSTheme shared] captionFont];
         [b setTitleColor:[[RSTheme shared] accentColor] forState:UIControlStateNormal];
-        b.translatesAutoresizingMaskIntoConstraints = NO;
-        [row addSubview:b];
-        [NSLayoutConstraint activateConstraints:[
-            [b.trailingAnchor constraintEqualToAnchor:row.trailingAnchor],
-            [b.centerYAnchor constraintEqualToAnchor:l.centerYAnchor]
-        ]];
+        b.frame = CGRectMake(scroll.frame.size.width - 120, y, 110, 30);
+        [scroll addSubview:b];
     }
 
-    [NSLayoutConstraint activateConstraints:@[
-        [l.leadingAnchor constraintEqualToAnchor:row.leadingAnchor],
-        [l.topAnchor constraintEqualToAnchor:row.topAnchor],
-        [l.bottomAnchor constraintEqualToAnchor:row.bottomAnchor],
-        [row.heightAnchor constraintGreaterThanOrEqualToConstant:30]
-    ]];
-    return row;
+    return y + 36;
 }
 
-- (UIView *)repoCards {
-    UIStackView *s = [[UIStackView alloc] init];
-    s.axis = UILayoutConstraintAxisHorizontal;
-    s.spacing = 12;
-    s.distribution = UIStackViewDistributionFillEqually;
-    s.translatesAutoresizingMaskIntoConstraints = NO;
-
-    // Mock repos
+- (CGFloat)addRepoCards:(CGFloat)y toScroll:(UIScrollView *)scroll width:(CGFloat)w {
+    CGFloat cardW = (w - 12 * 3) / 4;
+    NSArray *names = @[@"BigBoss", @"ModMyi", @"Chariz", @"Elucubratus"];
     for (NSInteger i = 0; i < 4; i++) {
-        RSGlassView *card = [[RSGlassView alloc] init];
-        card.translatesAutoresizingMaskIntoConstraints = NO;
+        RSGlassView *card = [[RSGlassView alloc] initWithFrame:CGRectMake(16 + i * (cardW + 12), y, cardW, 100)];
         card.cornerRadius = 16;
+        card.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
 
-        UILabel *title = [[UILabel alloc] init];
-        title.text = @[@"BigBoss", @"ModMyi", @"Chariz", @"Elucubratus"][i];
+        UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(4, 40, cardW - 8, 20)];
+        title.text = names[i];
         title.font = [[RSTheme shared] buttonFont];
         title.textColor = [[RSTheme shared] textColor];
         title.textAlignment = NSTextAlignmentCenter;
-        title.translatesAutoresizingMaskIntoConstraints = NO;
         [card addSubview:title];
-
-        [NSLayoutConstraint activateConstraints:@[
-            [card.heightAnchor constraintEqualToConstant:100],
-            [title.centerXAnchor constraintEqualToAnchor:card.centerXAnchor],
-            [title.centerYAnchor constraintEqualToAnchor:card.centerYAnchor]
-        ]];
-        [s addArrangedSubview:card];
+        [scroll addSubview:card];
     }
-    return s;
+    return y + 116;
 }
 
-- (UIView *)itemCards:(NSString *)type {
-    UIStackView *s = [[UIStackView alloc] init];
-    s.axis = UILayoutConstraintAxisVertical;
-    s.spacing = 12;
-    s.translatesAutoresizingMaskIntoConstraints = NO;
-
-    NSArray *names = @[@"SBSettings", @"Zeppelin", @"WinterBoard", @"Activator"];
-    if ([type isEqualToString:@"app"]) names = @[@"Filza", @"NewTerm", @"iFile", @"Terminal"];
-    if ([type isEqualToString:@"game"]) names = @[@"Flappy Bird", @"Pokemon GO", @"Crossy Road", @"Candy Crush"];
-    if ([type isEqualToString:@"theme"]) names = @[@"SnowBoard", @"Anemone", @"Whiteshift", @"Cyberduck"];
+- (CGFloat)addItemCards:(CGFloat)y section:(NSString *)type toScroll:(UIScrollView *)scroll width:(CGFloat)w {
+    NSArray *names;
+    if ([type isEqualToString:@"tweak"]) names = @[@"SBSettings", @"Zeppelin", @"WinterBoard"];
+    else if ([type isEqualToString:@"app"]) names = @[@"Filza", @"NewTerm", @"iFile"];
+    else if ([type isEqualToString:@"game"]) names = @[@"Flappy Bird", @"Pokemon GO", @"Crossy Road"];
+    else names = @[@"SnowBoard", @"Anemone", @"Whiteshift"];
 
     for (NSInteger i = 0; i < 3; i++) {
-        RSGlassView *card = [[RSGlassView alloc] init];
-        card.translatesAutoresizingMaskIntoConstraints = NO;
+        RSGlassView *card = [[RSGlassView alloc] initWithFrame:CGRectMake(16, y + i * 88, w, 72)];
         card.cornerRadius = 12;
 
-        UILabel *title = [[UILabel alloc] init];
+        UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(12, 12, w - 24, 20)];
         title.text = names[i];
         title.font = [[RSTheme shared] bodyFont];
         title.textColor = [[RSTheme shared] textColor];
-        title.translatesAutoresizingMaskIntoConstraints = NO;
+        [card addSubview:title];
 
-        UILabel *desc = [[UILabel alloc] init];
+        UILabel *desc = [[UILabel alloc] initWithFrame:CGRectMake(12, 36, w - 24, 16)];
         desc.text = @"Описание пакета...";
         desc.font = [[RSTheme shared] captionFont];
         desc.textColor = [[RSTheme shared] secondaryTextColor];
-        desc.translatesAutoresizingMaskIntoConstraints = NO;
-
-        [card addSubview:title];
         [card addSubview:desc];
 
-        [NSLayoutConstraint activateConstraints:@[
-            [card.heightAnchor constraintEqualToConstant:72],
-            [title.topAnchor constraintEqualToAnchor:card.topAnchor constant:12],
-            [title.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:12],
-            [desc.topAnchor constraintEqualToAnchor:title.bottomAnchor constant:4],
-            [desc.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:12]
-        ]];
-        [s addArrangedSubview:card];
+        [scroll addSubview:card];
     }
-    return s;
+    return y + 3 * 88 + 24;
 }
 
 @end
