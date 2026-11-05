@@ -28,7 +28,11 @@
     self.backgroundColor = [UIColor clearColor];
 
     // Blur effect (iOS 8+)
-    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterialLight];
+    UIBlurEffectStyle blurStyle = UIBlurEffectStyleLight;
+    if (@available(iOS 13.0, *)) {
+        blurStyle = UIBlurEffectStyleSystemThinMaterialLight;
+    }
+    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:blurStyle];
     _blurView = [[UIVisualEffectView alloc] initWithEffect:blur];
     _blurView.translatesAutoresizingMaskIntoConstraints = NO;
     _blurView.layer.cornerRadius = _cornerRadius;

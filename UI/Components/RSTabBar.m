@@ -50,9 +50,6 @@
     CGContextSetLineCap(ctx, kCGLineCapRound);
     CGContextSetLineJoin(ctx, kCGLineJoinRound);
 
-    CGPoint p = CGPointMake(12, 12);
-    CGFloat m = 4;
-
     switch (idx) {
         case 0: { // house
             CGContextMoveToPoint(ctx, 4, 10);
@@ -129,7 +126,8 @@
     CGFloat w = self.bounds.size.width / 4.0;
     CGFloat h = self.bounds.size.height;
     for (NSInteger i = 0; i < self.buttons.count; i++) {
-        self.buttons[i].frame = CGRectMake(i * w, 0, w, h);
+        UIButton *btn = self.buttons[i];
+        btn.frame = CGRectMake(i * w, 0, w, h);
     }
 }
 
