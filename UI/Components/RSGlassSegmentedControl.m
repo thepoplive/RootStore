@@ -12,11 +12,7 @@
 - (void)setup {
     RSTheme *t = [RSTheme shared];
     self.backgroundColor = [UIColor clearColor];
-    if (@available(iOS 13.0, *)) {
-        self.selectedSegmentTintColor = [t accentColor];
-    } else {
-        self.tintColor = [t accentColor];
-    }
+    self.tintColor = [t accentColor];
 
     NSDictionary *normal = @{
         NSForegroundColorAttributeName: [t textColor],
