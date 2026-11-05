@@ -173,7 +173,7 @@
     CGFloat maxX = self.bounds.size.width - _pill.bounds.size.width / 2.0 - 20;
     newX = MIN(MAX(newX, minX), maxX);
     
-    _pill.center = CGPointMake(newX, _pill.center.y);
+    _pill.center = CGPointMake(newX, self.bounds.size.height / 2.0);
     [gesture setTranslation:CGPointZero inView:self];
 
     if (gesture.state == UIGestureRecognizerStateEnded || gesture.state == UIGestureRecognizerStateCancelled) {
@@ -249,9 +249,9 @@
         btn.frame = CGRectMake(20 + i * btnW + (btnW - 24) / 2, (h - 24) / 2, 24, 24);
     }
 
-    // Pill centered on selected button
+    // Pill - выше бара (Liquid Glass стиль)
     UIButton *selBtn = self.buttons[_selectedIndex];
-    _pill.bounds = CGRectMake(0, 0, _pillWidth, h - 16);
+    _pill.bounds = CGRectMake(0, 0, _pillWidth, h);
     _pill.center = CGPointMake(selBtn.center.x, h / 2.0);
 }
 
