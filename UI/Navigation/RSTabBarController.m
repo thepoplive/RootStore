@@ -45,7 +45,13 @@
     [self.view addSubview:_tabBar];
 
     // Add first VC
-    self.selectedIndex = RSTabIndexHome;
+    self.tabBar.selectedIndex = RSTabIndexHome;
+    UIViewController *first = self.viewControllers[RSTabIndexHome];
+    self.currentVC = first;
+    [self addChildViewController:first];
+    first.view.frame = _containerView.bounds;
+    [_containerView addSubview:first.view];
+    [first didMoveToParentViewController:self];
 
     // Theme observer
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(themeChanged) name:RSThemeDidChangeNotification object:nil];
