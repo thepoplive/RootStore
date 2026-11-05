@@ -66,7 +66,7 @@
     [super viewDidLayoutSubviews];
 
     CGFloat h = self.view.bounds.size.height;
-    CGFloat tabBarH = 64.0; // Компактный floating bar
+    CGFloat tabBarH = 60.0;
 
     _tabBar.frame = CGRectMake(0, h - tabBarH - 8, self.view.bounds.size.width, tabBarH);
     _tabBar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;

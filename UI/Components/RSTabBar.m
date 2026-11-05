@@ -5,9 +5,10 @@
 @property (nonatomic, strong) NSArray *buttons;
 @property (nonatomic, strong) UIView *pill;
 @property (nonatomic, assign) CGFloat tabWidth;
-@property (nonatomic, assign) CGFloat barHeight;
-@property (nonatomic, assign) CGFloat pillHeight;
 @property (nonatomic, strong) UIImpactFeedbackGenerator *feedback;
+@property (nonatomic, strong) UIVisualEffectView *blurView;
+@property (nonatomic, assign) CGFloat barHeight;
+@property (nonatomic, assign) CGFloat pillWidth;
 @end
 
 @implementation RSTabBar
@@ -20,26 +21,56 @@
 
 - (void)setup {
     self.backgroundColor = [UIColor clearColor];
-    _barHeight = 58.0;
-    _pillHeight = 44.0;
+    _barHeight = 52.0;
+    _pillWidth = 60.0;
 
     _feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
 
+    // Glass blur background (серый овал)
+    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterialDark];
+    _blurView = [[UIVisualEffectView alloc] initWithEffect:blur];
+    _blurView.translatesAutoresizingMaskIntoConstraints = NO;
+    _blurView.layer.cornerRadius = _barHeight / 2.0;
+    _blurView.clipsToBounds = YES;
+    [self addSubview:_blurView];
+
+    // Inner highlight (edge highlight как в Liquid Glass)
+    UIView *highlight = [[UIView alloc] init];
+    highlight.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+    highlight.translatesAutoresizingMaskIntoConstraints = NO;
+    highlight.layer.cornerRadius = _barHeight / 2.0;
+    highlight.userInteractionEnabled = NO;
+    [_blurView.contentView addSubview:highlight];
+
+    // Shadow
+    self.layer.shadowColor = [UIColor blackColor].CGColor;
+    self.layer.shadowOffset = CGSizeMake(0, 4);
+    self.layer.shadowRadius = 12;
+    self.layer.shadowOpacity = 0.3;
+
+    // Pill (активный индикатор) - Liquid Glass style
+    _pill = [[UIView alloc] init];
+    _pill.backgroundColor = [[RSTheme shared] accentColor];
+    _pill.layer.cornerRadius = _pillWidth / 2.0;
+    _pill.layer.shadowColor = [UIColor blackColor].CGColor;
+    _pill.layer.shadowOffset = CGSizeMake(0, 2);
+    _pill.layer.shadowRadius = 6;
+    _pill.layer.shadowOpacity = 0.4;
+    _pill.translatesAutoresizingMaskIntoConstraints = NO;
+    [self addSubview:_pill];
+
     // Кнопки
-    NSArray *titles = @[@"Главная", @"Репозитории", @"Поиск", @"Профиль"];
+    NSArray *titles = @[@"", @"", @"", @""];
     NSMutableArray *btns = [NSMutableArray array];
+    NSArray *icons = @[@0, @1, @2, @3];
+    
     for (NSInteger i = 0; i < 4; i++) {
         UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
         btn.tag = i;
-        [btn setTitle:titles[i] forState:UIControlStateNormal];
-        btn.titleLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightMedium];
-        [btn setTitleColor:[[RSTheme shared] secondaryTextColor] forState:UIControlStateNormal];
-        [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
         btn.tintColor = [[RSTheme shared] secondaryTextColor];
         [btn setImage:[self iconForIndex:i selected:NO] forState:UIControlStateNormal];
         [btn setImage:[self iconForIndex:i selected:YES] forState:UIControlStateSelected];
         btn.imageView.contentMode = UIViewContentModeScaleAspectFit;
-        btn.titleEdgeInsets = UIEdgeInsetsMake(24, -24, 0, 0);
         btn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0);
         [btn addTarget:self action:@selector(btnTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:btn];
@@ -47,27 +78,29 @@
     }
     self.buttons = btns;
 
-    // Pill (капля)
-    _pill = [[UIView alloc] init];
-    _pill.backgroundColor = [[RSTheme shared] accentColor];
-    _pill.layer.cornerRadius = _pillHeight / 2.0;
-    _pill.layer.shadowColor = [UIColor blackColor].CGColor;
-    _pill.layer.shadowOffset = CGSizeMake(0, 2);
-    _pill.layer.shadowRadius = 6;
-    _pill.layer.shadowOpacity = 0.25;
-    [self insertSubview:_pill belowSubview:self.buttons[0]];
-
-    // Pan gesture для перетаскивания pill
+    // Pan gesture для pill
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(pillDrag:)];
     [_pill addGestureRecognizer:pan];
     _pill.userInteractionEnabled = YES;
+
+    // Layout constraints для blurView
+    [NSLayoutConstraint activateConstraints:@[
+        [_blurView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:20],
+        [_blurView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-20],
+        [_blurView.topAnchor constraintEqualToAnchor:self.topAnchor constant:4],
+        [_blurView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor constant:-4],
+        [highlight.leadingAnchor constraintEqualToAnchor:_blurView.contentView.leadingAnchor],
+        [highlight.trailingAnchor constraintEqualToAnchor:_blurView.contentView.trailingAnchor],
+        [highlight.topAnchor constraintEqualToAnchor:_blurView.contentView.topAnchor],
+        [highlight.heightAnchor constraintEqualToAnchor:_blurView.contentView.heightAnchor multiplier:0.35]
+    ]];
 
     _selectedIndex = 0;
     [self updateAppearance];
 }
 
 - (UIImage *)iconForIndex:(NSInteger)idx selected:(BOOL)sel {
-    CGSize s = CGSizeMake(22, 22);
+    CGSize s = CGSizeMake(24, 24);
     UIGraphicsBeginImageContextWithOptions(s, NO, 0);
     CGContextRef ctx = UIGraphicsGetCurrentContext();
     UIColor *c = sel ? [UIColor whiteColor] : [[RSTheme shared] secondaryTextColor];
@@ -77,7 +110,7 @@
     CGContextSetLineJoin(ctx, kCGLineJoinRound);
 
     switch (idx) {
-        case 0: {
+        case 0: { // home
             CGContextMoveToPoint(ctx, 5, 10);
             CGContextAddLineToPoint(ctx, 11, 5);
             CGContextAddLineToPoint(ctx, 17, 10);
@@ -87,7 +120,7 @@
             CGContextStrokePath(ctx);
             break;
         }
-        case 1: {
+        case 1: { // folder
             CGContextMoveToPoint(ctx, 4, 7);
             CGContextAddLineToPoint(ctx, 9, 7);
             CGContextAddLineToPoint(ctx, 11, 5);
@@ -98,7 +131,7 @@
             CGContextStrokePath(ctx);
             break;
         }
-        case 2: {
+        case 2: { // search
             CGContextAddArc(ctx, 8, 8, 4, 0, 6.28, 0);
             CGContextStrokePath(ctx);
             CGContextMoveToPoint(ctx, 12, 12);
@@ -106,7 +139,7 @@
             CGContextStrokePath(ctx);
             break;
         }
-        case 3: {
+        case 3: { // person
             CGContextAddArc(ctx, 11, 7, 3, 0, 6.28, 0);
             CGContextStrokePath(ctx);
             CGContextMoveToPoint(ctx, 5, 17);
@@ -129,24 +162,36 @@
 }
 
 - (void)pillDrag:(UIPanGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        [_feedback impactOccurred];
+    }
+    
     CGPoint translation = [gesture translationInView:self];
     CGFloat newX = _pill.center.x + translation.x;
-    CGFloat minX = _pill.bounds.size.width / 2.0 + 4;
-    CGFloat maxX = self.bounds.size.width - _pill.bounds.size.width / 2.0 - 4;
+    
+    CGFloat minX = _pill.bounds.size.width / 2.0 + 20;
+    CGFloat maxX = self.bounds.size.width - _pill.bounds.size.width / 2.0 - 20;
     newX = MIN(MAX(newX, minX), maxX);
+    
     _pill.center = CGPointMake(newX, _pill.center.y);
     [gesture setTranslation:CGPointZero inView:self];
 
     if (gesture.state == UIGestureRecognizerStateEnded || gesture.state == UIGestureRecognizerStateCancelled) {
         NSInteger nearest = [self nearestTabToX:_pill.center.x];
-        if (nearest != _selectedIndex) {
-            _selectedIndex = nearest;
-            [_feedback impactOccurred];
-            if ([self.delegate respondsToSelector:@selector(tabBar:didSelectIndex:)]) {
-                [self.delegate tabBar:self didSelectIndex:_selectedIndex];
+        
+        // Snap анимация
+        UIButton *btn = self.buttons[nearest];
+        [UIView animateWithDuration:0.3 delay:0 usingSpringWithDamping:0.7 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+            self.pill.center = CGPointMake(btn.center.x, self.pill.center.y);
+        } completion:^(BOOL finished) {
+            if (nearest != self.selectedIndex) {
+                self.selectedIndex = nearest;
+                [self->_feedback impactOccurred];
+                if ([self.delegate respondsToSelector:@selector(tabBar:didSelectIndex:)]) {
+                    [self.delegate tabBar:self didSelectIndex:self.selectedIndex];
+                }
             }
-        }
-        [self animatePillToSelected];
+        }];
     }
 }
 
@@ -168,24 +213,22 @@
 - (void)setSelectedIndex:(RSTabIndex)selectedIndex {
     if (_selectedIndex == selectedIndex) return;
     _selectedIndex = selectedIndex;
-    [self animatePillToSelected];
-    [self updateButtons];
-}
-
-- (void)animatePillToSelected {
-    UIButton *btn = self.buttons[_selectedIndex];
-    CGFloat targetX = btn.center.x;
-
+    
+    UIButton *btn = self.buttons[selectedIndex];
     [UIView animateWithDuration:0.35 delay:0 usingSpringWithDamping:0.8 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-        self.pill.center = CGPointMake(targetX, self.pill.center.y);
+        self.pill.center = CGPointMake(btn.center.x, self.pill.center.y);
     } completion:nil];
+    
+    [self updateButtons];
 }
 
 - (void)updateButtons {
     for (NSInteger i = 0; i < self.buttons.count; i++) {
         UIButton *btn = self.buttons[i];
-        btn.selected = (i == _selectedIndex);
-        [btn setImage:[self iconForIndex:i selected:(i == _selectedIndex)] forState:UIControlStateNormal];
+        BOOL sel = (i == _selectedIndex);
+        btn.selected = sel;
+        btn.tintColor = sel ? [UIColor whiteColor] : [[RSTheme shared] secondaryTextColor];
+        [btn setImage:[self iconForIndex:i selected:sel] forState:UIControlStateNormal];
     }
 }
 
@@ -198,19 +241,17 @@
 
     CGFloat w = self.bounds.size.width;
     CGFloat h = self.bounds.size.height;
-    CGFloat barInset = 24.0;
-    CGFloat availableW = w - barInset * 2;
-    _tabWidth = availableW / 4.0;
-
-    // Кнопки по центру
+    
+    // Buttons centered in bar
+    CGFloat btnW = (w - 40) / 4.0;
     for (NSInteger i = 0; i < self.buttons.count; i++) {
         UIButton *btn = self.buttons[i];
-        btn.frame = CGRectMake(barInset + i * _tabWidth, 0, _tabWidth, h);
+        btn.frame = CGRectMake(20 + i * btnW + (btnW - 24) / 2, (h - 24) / 2, 24, 24);
     }
 
-    // Pill
-    _pill.bounds = CGRectMake(0, 0, _tabWidth - 4, _pillHeight);
+    // Pill centered on selected button
     UIButton *selBtn = self.buttons[_selectedIndex];
+    _pill.bounds = CGRectMake(0, 0, _pillWidth, h - 16);
     _pill.center = CGPointMake(selBtn.center.x, h / 2.0);
 }
 
