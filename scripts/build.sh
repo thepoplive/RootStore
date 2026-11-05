@@ -69,7 +69,7 @@ link_binary() {
     echo "  LD $APP_NAME (sysroot: $(basename "$LEGACY_SDK"))"
     # shellcheck disable=SC2086
     xcrun clang -arch "$ARCH" -miphoneos-version-min="$MIN_OS" \
-        -isysroot "$LEGACY_SDK" -Wl,-U,_objc_msgSend_stret \
+        -isysroot "$LEGACY_SDK" -Wl,-U,_objc_msgSend_stret -Wl,-U,__availability_version_check \
         -o "$BUILD/$APP_NAME" "$OBJ"/*.o $FRAMEWORKS $LIBS \
         || die "link failed"
     command -v ldid >/dev/null 2>&1 || die "ldid not found (brew install ldid)"
