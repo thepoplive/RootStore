@@ -27,7 +27,7 @@
     _feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
 
     // Glass blur background (серый овал)
-    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterialDark];
+    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
     _blurView = [[UIVisualEffectView alloc] initWithEffect:blur];
     _blurView.translatesAutoresizingMaskIntoConstraints = NO;
     _blurView.layer.cornerRadius = _barHeight / 2.0;
