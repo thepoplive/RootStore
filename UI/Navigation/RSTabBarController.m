@@ -72,9 +72,7 @@
     CGFloat h = self.view.bounds.size.height;
     CGFloat tabBarH = 80.0;
     CGFloat safeBottom = 0;
-    if (@available(iOS 11.0, *)) {
-        safeBottom = self.view.safeAreaInsets.bottom;
-    }
+    // safeAreaInsets not available in iOS 10.3 SDK - use fixed value for iPhone 4s
 
     _tabBar.frame = CGRectMake(16, h - tabBarH - safeBottom - 16, self.view.bounds.size.width - 32, tabBarH);
     _tabBar.layer.cornerRadius = tabBarH / 2.0;
