@@ -92,7 +92,7 @@
         [highlight.leadingAnchor constraintEqualToAnchor:_blurView.contentView.leadingAnchor],
         [highlight.trailingAnchor constraintEqualToAnchor:_blurView.contentView.trailingAnchor],
         [highlight.topAnchor constraintEqualToAnchor:_blurView.contentView.topAnchor],
-        [highlight.heightAnchor constraintEqualToAnchor:_blurView.contentView.heightAnchor multiplier:0.35]
+        [highlight.heightAnchor constraintEqualToConstant:18]
     ]];
 
     _selectedIndex = 0;
