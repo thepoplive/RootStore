@@ -58,22 +58,20 @@
 - (void)themeChanged {
     self.view.backgroundColor = [[RSTheme shared] backgroundColor];
     _containerView.backgroundColor = [UIColor clearColor];
+    [_tabBar setNeedsLayout];
+    [_tabBar layoutIfNeeded];
 }
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
 
     CGFloat h = self.view.bounds.size.height;
-    CGFloat tabBarH = 80.0;
-    CGFloat safeBottom = 0;
-    // safeAreaInsets not available in iOS 10.3 SDK - use fixed value for iPhone 4s
+    CGFloat tabBarH = 64.0; // Компактный floating bar
 
-    _tabBar.frame = CGRectMake(16, h - tabBarH - safeBottom - 16, self.view.bounds.size.width - 32, tabBarH);
-    _tabBar.layer.cornerRadius = tabBarH / 2.0;
-    _tabBar.backgroundColor = [[[RSTheme shared] cardColor] colorWithAlphaComponent:0.95];
-    _tabBar.clipsToBounds = YES;
+    _tabBar.frame = CGRectMake(0, h - tabBarH - 8, self.view.bounds.size.width, tabBarH);
+    _tabBar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
 
-    _containerView.frame = CGRectMake(0, 0, self.view.bounds.size.width, _tabBar.frame.origin.y - 16);
+    _containerView.frame = CGRectMake(0, 0, self.view.bounds.size.width, _tabBar.frame.origin.y - 8);
 }
 
 #pragma mark - RSTabBarDelegate
