@@ -29,9 +29,6 @@
 
     // Blur effect (iOS 8+)
     UIBlurEffectStyle blurStyle = UIBlurEffectStyleLight;
-    if (@available(iOS 13.0, *)) {
-        blurStyle = UIBlurEffectStyleSystemThinMaterialLight;
-    }
     UIBlurEffect *blur = [UIBlurEffect effectWithStyle:blurStyle];
     _blurView = [[UIVisualEffectView alloc] initWithEffect:blur];
     _blurView.translatesAutoresizingMaskIntoConstraints = NO;
