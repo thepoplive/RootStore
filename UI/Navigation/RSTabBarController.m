@@ -27,8 +27,8 @@
         [vc.view addSubview:l];
         l.translatesAutoresizingMaskIntoConstraints = NO;
         [NSLayoutConstraint activateConstraints:@[
-            [l.centerXAnchor constraintEqualToAnchor:vc.view.centerXAnchor],
-            [l.centerYAnchor constraintEqualToAnchor:vc.view.centerYAnchor]
+            [NSLayoutConstraint constraintWithItem:l attribute:NSLayoutAttributeCenterX relatedBy:0 toItem:vc.view attribute:NSLayoutAttributeCenterX multiplier:1 constant:0],
+            [NSLayoutConstraint constraintWithItem:l attribute:NSLayoutAttributeCenterY relatedBy:0 toItem:vc.view attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]
         ]];
         [vcs addObject:vc];
     }
@@ -65,7 +65,10 @@
 
     CGFloat h = self.view.bounds.size.height;
     CGFloat tabBarH = 80.0;
-    CGFloat safeBottom = self.view.safeAreaInsets.bottom;
+    CGFloat safeBottom = 0;
+    if (@available(iOS 11.0, *)) {
+        safeBottom = self.view.safeAreaInsets.bottom;
+    }
 
     _tabBar.frame = CGRectMake(16, h - tabBarH - safeBottom - 16, self.view.bounds.size.width - 32, tabBarH);
     _tabBar.layer.cornerRadius = tabBarH / 2.0;
