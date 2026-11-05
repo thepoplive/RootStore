@@ -1,6 +1,6 @@
 Package: com.blxckfvde.rootstore
 Name: RootStore
-Version: 0.1.0
+Version: 0.0.1
 Architecture: iphoneos-arm
 Description: Alternative package manager and app store for jailbroken legacy iOS
 Maintainer: blxckfvde
