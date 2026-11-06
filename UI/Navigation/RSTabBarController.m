@@ -38,7 +38,7 @@
     _tabBar.delegate = self;
     [self.view addSubview:_tabBar];
 
-    self.selectedIndex = 0;
+    self.tabBar.selectedIndex = 0;
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(themeChanged) name:RSThemeDidChangeNotification object:nil];
 }
