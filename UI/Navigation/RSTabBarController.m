@@ -1,9 +1,5 @@
 #import "RSTabBarController.h"
 #import "RSTheme.h"
-#import "RSHomeViewController.h"
-#import "RSRepositoriesViewController.h"
-#import "RSSearchViewController.h"
-#import "RSProfileViewController.h"
 
 @interface RSTabBarController () <RSTabBarDelegate>
 @property (nonatomic, strong) UIView *containerView;
@@ -18,36 +14,32 @@
     [super viewDidLoad];
     self.view.backgroundColor = [[RSTheme shared] backgroundColor];
 
-    // Placeholder VCs replaced by real ones
-    NSArray *classes = @[[RSHomeViewController class], [RSRepositoriesViewController class],
-                         [RSSearchViewController class], [RSProfileViewController class]];
+    // 4 простых placeholder VC
     NSMutableArray *vcs = [NSMutableArray array];
     for (NSInteger i = 0; i < 4; i++) {
-        UIViewController *vc = [[classes[i] alloc] init];
+        UIViewController *vc = [[UIViewController alloc] init];
+        vc.view.backgroundColor = [[RSTheme shared] backgroundColor];
+        UILabel *l = [[UILabel alloc] init];
+        l.text = @[@"Главная", @"Репозитории", @"Поиск", @"Профиль"][i];
+        l.font = [UIFont systemFontOfSize:20 weight:UIFontWeightBold];
+        l.textColor = [[RSTheme shared] textColor];
+        l.frame = CGRectMake(0, 200, self.view.bounds.size.width, 40);
+        l.textAlignment = NSTextAlignmentCenter;
+        [vc.view addSubview:l];
         [vcs addObject:vc];
     }
     self.viewControllers = vcs;
 
-    // Container for child VCs
     _containerView = [[UIView alloc] init];
     _containerView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:_containerView];
 
-    // Glass tab bar
     _tabBar = [[RSTabBar alloc] init];
     _tabBar.delegate = self;
     [self.view addSubview:_tabBar];
 
-    // Add first VC
-    self.tabBar.selectedIndex = RSTabIndexHome;
-    UIViewController *first = self.viewControllers[RSTabIndexHome];
-    self.currentVC = first;
-    [self addChildViewController:first];
-    first.view.frame = _containerView.bounds;
-    [_containerView addSubview:first.view];
-    [first didMoveToParentViewController:self];
+    self.selectedIndex = 0;
 
-    // Theme observer
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(themeChanged) name:RSThemeDidChangeNotification object:nil];
 }
 
@@ -80,7 +72,6 @@
     UIViewController *vc = self.viewControllers[index];
     if (_currentVC == vc) return;
 
-    // Transition
     UIViewController *from = _currentVC;
     UIViewController *to = vc;
     _currentVC = to;
