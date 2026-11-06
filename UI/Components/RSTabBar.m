@@ -183,7 +183,8 @@
     NSInteger nearest = 0;
     CGFloat minDist = CGFLOAT_MAX;
     for (NSInteger i = 0; i < self.buttons.count; i++) {
-        CGFloat btnCenter = self.buttons[i].center.x;
+        UIButton *btn = self.buttons[i];
+        CGFloat btnCenter = btn.center.x;
         CGFloat dist = fabs(x - btnCenter);
         if (dist < minDist) {
             minDist = dist;
